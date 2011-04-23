@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"strings"
 )
 
 const (
@@ -47,7 +48,7 @@ func lround(v float64) int64 {
 	return i
 }
 
-func newZone(lat float64, lon float64, level int) *Zone {
+func GetZoneByLocation(lat float64, lon float64, level int) *Zone {
 	if lat < -90 || lat > 90 || lon < -180 || lon > 180 ||
 		level < 0 || level > max_level {
 		return nil
@@ -84,7 +85,7 @@ func newZone(lat float64, lon float64, level int) *Zone {
 	h_lat := (h_k*float64(h_x)*unit_x + float64(h_y)*unit_y) / 2
 	h_lon := (h_lat - float64(h_y)*unit_y) / h_k
 
-	z_loc_x, z_loc_y := xy2loc(h_lon, h_lat)
+	z_loc_y, z_loc_x := xy2loc(h_lon, h_lat)
 	if h_base-h_lon < h_size {
 		z_loc_x = 180
 		h_xy := h_x
@@ -127,13 +128,13 @@ func newZone(lat float64, lon float64, level int) *Zone {
 	}
 	h_a1 := h_1 / 30
 	h_a2 := h_1 % 30
-	code := make([]byte, level+1)
+	code := make([]byte, level)
 	code[0] = h_key[h_a1]
 	code[1] = h_key[h_a2]
 
 	for i := 3; i <= level; i++ {
 		d := code3_x[i]*3 + code3_y[i]
-		code[i] = uint8('0' + d)
+		code[i - 1] = uint8('0' + d)
 	}
 	zone.code = string(code)
 	zone.lat = z_loc_y
@@ -143,10 +144,102 @@ func newZone(lat float64, lon float64, level int) *Zone {
 	return zone
 }
 
+func GetZoneByCode(code string) *Zone {
+	level := len(code);
+	if (level - 2 < 0 || level - 2 > max_level) {
+		return nil;
+	}
+	h_k := math.Tan(h_deg)
+	h_size := calcHexSize(level);
+	unit_x := 6.0 * h_size;
+	unit_y := 6.0 * h_size * h_k;
+
+	h_a := 0;
+	cp := strings.IndexRune(h_key, int(code[0]))
+	if (cp < 0) {
+		return nil;
+	}
+	h_a += cp * 30;
+	cp = strings.IndexRune(h_key, int(code[1]))
+	if (cp < 0) {
+		return nil;
+	}
+	h_a += cp
+
+	h_a0 := (h_a % 1000) / 100;
+	h_a1 := (h_a % 100) / 10;
+	h_a2 := (h_a % 10);
+	if (h_a1 != 1 && h_a1 != 2 && h_a1 != 5 &&
+		h_a2 != 1 && h_a2 != 2 && h_a2 != 5) {
+		if (h_a0 == 5) {
+			h_a0 = 7;
+		} else if (h_a0 == 1) {
+			h_a0 = 3;
+		}
+	}
+
+	h_decx := make([]int, level + 1)
+	h_decy := make([]int, level + 1)
+
+	h_decx[0] = h_a0 / 3;
+	h_decy[0] = h_a0 % 3;
+	h_decx[1] = h_a1 / 3;
+	h_decy[1] = h_a1 % 3;
+	h_decx[2] = h_a2 / 3;
+	h_decy[2] = h_a2 % 3;
+
+	for i := 3; i <= level; i++ {
+		n := code[i - 1] - '0';
+		if (n < 0 || n > 8) {
+			fmt.Println("xxx", code[i-1],n,i,code, code[0], code[1], code[2], code[3])
+			return nil;
+		}
+		h_decx[i] = int(n / 3);
+		h_decy[i] = int(n % 3);
+	}
+
+	h_x := int64(0);
+	h_y := int64(0);
+	for i := 0; i <= level; i++ {
+		h_pow := math.Pow(3.0, float64(level - i))
+		if (h_decx[i] == 0) {
+			h_x -= int64(h_pow)  // XXX
+		} else if (h_decx[i] == 2) {
+			h_x += int64(h_pow)
+		}
+		if (h_decy[i] == 0) {
+			h_y -= int64(h_pow)
+		} else if (h_decy[i] == 2) {
+			h_y += int64(h_pow)
+		}
+	}
+
+	h_lat_y := (h_k * float64(h_x) * unit_x + float64(h_y) * unit_y) / 2;
+	h_lon_x := (h_lat_y - float64(h_y) * unit_y) / h_k;
+	h_lat, h_lon := xy2loc(h_lon_x, h_lat_y);
+	if (h_lon > 180) {
+		h_lon -= 360;
+	} else if (h_lon < -180) {
+		h_lon += 360;
+	}
+
+	zone := new(Zone)
+	zone.code = code
+	zone.lat = h_lat;
+	zone.lon = h_lon;
+	zone.level = level - 2;
+	zone.x = h_x;
+	zone.y = h_y;
+	return zone;
+}
+
 func main() {
 	fmt.Println("hello")
-	z := newZone(30.0, 120.1, 5)
+	z := GetZoneByLocation(30.0, 120.1, 5)
 	if z != nil {
 		fmt.Println(z.code)
+		fmt.Println(z)
 	}
+	z2 := GetZoneByCode(z.code)
+	fmt.Println(z2)
 }

@@ -1,6 +1,7 @@
 include $(GOROOT)/src/Make.inc
 
 TARG=geohex3
-GOFILES=geohex3.go
+GOFILES=\
+	tmain.go\
 
 include $(GOROOT)/src/Make.cmd

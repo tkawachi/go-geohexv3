@@ -1,7 +1,6 @@
-package main
+package geohex3
 
 import (
-	"fmt"
 	"math"
 	"strings"
 )
@@ -33,10 +32,10 @@ func xy2loc(x float64, y float64) (lat float64, lon float64) {
 }
 
 type Zone struct {
-	lat, lon float64
-	level    int
-	code     string
-	x, y     int64
+	Lat, Lon float64
+	Level    int
+	Code     string
+	X, Y     int64
 }
 
 func lround(v float64) int64 {
@@ -56,7 +55,7 @@ func GetZoneByLocation(lat float64, lon float64, level int) *Zone {
 	h_k := math.Tan(h_deg)
 
 	zone := new(Zone)
-	zone.level = level
+	zone.Level = level
 	level += 2
 	h_size := calcHexSize(level)
 	lon_grid, lat_grid := loc2xy(lon, lat)
@@ -136,11 +135,11 @@ func GetZoneByLocation(lat float64, lon float64, level int) *Zone {
 		d := code3_x[i]*3 + code3_y[i]
 		code[i - 1] = uint8('0' + d)
 	}
-	zone.code = string(code)
-	zone.lat = z_loc_y
-	zone.lon = z_loc_x
-	zone.x = h_x
-	zone.y = h_y
+	zone.Code = string(code)
+	zone.Lat = z_loc_y
+	zone.Lon = z_loc_x
+	zone.X = h_x
+	zone.Y = h_y
 	return zone
 }
 
@@ -191,7 +190,6 @@ func GetZoneByCode(code string) *Zone {
 	for i := 3; i <= level; i++ {
 		n := code[i - 1] - '0';
 		if (n < 0 || n > 8) {
-			fmt.Println("xxx", code[i-1],n,i,code, code[0], code[1], code[2], code[3])
 			return nil;
 		}
 		h_decx[i] = int(n / 3);
@@ -224,22 +222,11 @@ func GetZoneByCode(code string) *Zone {
 	}
 
 	zone := new(Zone)
-	zone.code = code
-	zone.lat = h_lat;
-	zone.lon = h_lon;
-	zone.level = level - 2;
-	zone.x = h_x;
-	zone.y = h_y;
+	zone.Code = code
+	zone.Lat = h_lat;
+	zone.Lon = h_lon;
+	zone.Level = level - 2;
+	zone.X = h_x;
+	zone.Y = h_y;
 	return zone;
-}
-
-func main() {
-	fmt.Println("hello")
-	z := GetZoneByLocation(30.0, 120.1, 5)
-	if z != nil {
-		fmt.Println(z.code)
-		fmt.Println(z)
-	}
-	z2 := GetZoneByCode(z.code)
-	fmt.Println(z2)
 }

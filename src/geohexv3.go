@@ -1,4 +1,4 @@
-package geohex3
+package geohexv3
 
 import (
 	"math"

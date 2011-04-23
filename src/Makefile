@@ -1,7 +1,7 @@
 include $(GOROOT)/src/Make.inc
 
-TARG=geohex3
+TARG=geohexv3
 GOFILES=\
-	geohex3.go\
+	geohexv3.go\
 
 include $(GOROOT)/src/Make.pkg

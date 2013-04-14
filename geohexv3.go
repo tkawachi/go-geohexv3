@@ -154,12 +154,12 @@ func GetZoneByCode(code string) *Zone {
 	unit_y := 6.0 * h_size * h_k;
 
 	h_a := 0;
-	cp := strings.IndexRune(h_key, int(code[0]))
+	cp := strings.IndexRune(h_key, rune(code[0]))
 	if (cp < 0) {
 		return nil;
 	}
 	h_a += cp * 30;
-	cp = strings.IndexRune(h_key, int(code[1]))
+	cp = strings.IndexRune(h_key, rune(code[1]))
 	if (cp < 0) {
 		return nil;
 	}
